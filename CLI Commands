@@ -1,0 +1,327 @@
+Step1: Updated aswcli client: pip3 install --upgrade --user awscli #did it because the cli did not want to use tags
+
+
+Step2: Creation of AWS VNC:
+root@dedic-DyvoPes:~$ aws ec2 create-vpc --cidr-block 192.168.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=demoVPC_CLI2}]'
+{
+    "Vpc": {
+        "OwnerId": "471112641934",
+        "InstanceTenancy": "default",
+        "Ipv6CidrBlockAssociationSet": [],
+        "CidrBlockAssociationSet": [
+            {
+                "AssociationId": "vpc-cidr-assoc-0a362ee28c29cd41c",
+                "CidrBlock": "192.168.0.0/16",
+                "CidrBlockState": {
+                    "State": "associated"
+                }
+            }
+        ],
+        "IsDefault": false,
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "demoVPC_CLI2"
+            }
+        ],
+        "VpcId": "vpc-0bb411320455f33db",
+        "State": "pending",
+        "CidrBlock": "192.168.0.0/16",
+        "DhcpOptionsId": "dopt-0dd95b73645e1a7f5"
+    }
+}
+
+
+Step3: Creation of Public subnet: 
+root@dedic-DyvoPes:~$ aws ec2 create-subnet --vpc-id vpc-0bb411320455f33db --cidr-block 192.168.1.0/24 --availability-zone eu-north-1a --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Public2}]'
+{
+    "Subnet": {
+        "AvailabilityZoneId": "eun1-az1",
+        "OwnerId": "471112641934",
+        "AssignIpv6AddressOnCreation": false,
+        "Ipv6CidrBlockAssociationSet": [],
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "Public2"
+            }
+        ],
+        "SubnetArn": "arn:aws:ec2:eu-north-1:471112641934:subnet/subnet-0433d8e23ed5f8efd",
+        "EnableDns64": false,
+        "Ipv6Native": false,
+        "PrivateDnsNameOptionsOnLaunch": {
+            "HostnameType": "ip-name",
+            "EnableResourceNameDnsARecord": false,
+            "EnableResourceNameDnsAAAARecord": false
+        },
+        "SubnetId": "subnet-0433d8e23ed5f8efd",
+        "State": "available",
+        "VpcId": "vpc-0bb411320455f33db",
+        "CidrBlock": "192.168.1.0/24",
+        "AvailableIpAddressCount": 251,
+        "AvailabilityZone": "eu-north-1a",
+        "DefaultForAz": false,
+        "MapPublicIpOnLaunch": false
+    }
+}
+
+
+
+
+Step4: Creation of Private subnet: 
+root@dedic-DyvoPes:~$ aws ec2 create-subnet --vpc-id vpc-0bb411320455f33db --cidr-block 192.168.2.0/24 --availability-zone eu-north-1a --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=Private2}]'
+{
+    "Subnet": {
+        "AvailabilityZoneId": "eun1-az1",
+        "OwnerId": "471112641934",
+        "AssignIpv6AddressOnCreation": false,
+        "Ipv6CidrBlockAssociationSet": [],
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "Private2"
+            }
+        ],
+        "SubnetArn": "arn:aws:ec2:eu-north-1:471112641934:subnet/subnet-034e0b42c3edb1c7b",
+        "EnableDns64": false,
+        "Ipv6Native": false,
+        "PrivateDnsNameOptionsOnLaunch": {
+            "HostnameType": "ip-name",
+            "EnableResourceNameDnsARecord": false,
+            "EnableResourceNameDnsAAAARecord": false
+        },
+        "SubnetId": "subnet-034e0b42c3edb1c7b",
+        "State": "available",
+        "VpcId": "vpc-0bb411320455f33db",
+        "CidrBlock": "192.168.2.0/24",
+        "AvailableIpAddressCount": 251,
+        "AvailabilityZone": "eu-north-1a",
+        "DefaultForAz": false,
+        "MapPublicIpOnLaunch": false
+    }
+}
+
+
+
+Step5: Creation of Internet Gateway: 
+
+root@dedic-DyvoPes:~$ aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=myGW2}]'
+{
+    "InternetGateway": {
+        "Attachments": [],
+        "InternetGatewayId": "igw-0ba9b4dc4f4c311a2",
+        "OwnerId": "471112641934",
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "myGW2"
+            }
+        ]
+    }
+}
+
+
+
+
+Step6: Attaching a gateway: 
+root@dedic-DyvoPes:~$ aws ec2 attach-internet-gateway --vpc-id "vpc-0bb411320455f33db" --internet-gateway-id "igw-0ba9b4dc4f4c311a2" --region eu-north-1
+myGW2  igw-0ba9b4dc4f4c311a2  Attached  vpc-0bb411320455f33db | demoVPC_CLI2  471112641934
+
+
+Check:
+root@dedic-DyvoPes:~$ aws ec2 describe-internet-gateways --internet-gateway-ids igw-0ba9b4dc4f4c311a2
+{
+    "InternetGateways": [
+        {
+            "Attachments": [
+                {
+                    "State": "available",
+                    "VpcId": "vpc-0bb411320455f33db"
+                }
+            ],
+            "InternetGatewayId": "igw-0ba9b4dc4f4c311a2",
+            "OwnerId": "471112641934",
+            "Tags": [
+                {
+                    "Key": "Name",
+                    "Value": "myGW2"
+                }
+            ]
+        }
+    ]
+}
+
+
+
+Step7: Create Public Routing Table:
+root@dedic-DyvoPes:~$ aws ec2 create-route-table --vpc-id vpc-0bb411320455f33db  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=myPublic2}]'
+{
+    "RouteTable": {
+        "Associations": [],
+        "PropagatingVgws": [],
+        "RouteTableId": "rtb-0099e3b586f33a765",
+        "Routes": [
+            {
+                "DestinationCidrBlock": "192.168.0.0/16",
+                "GatewayId": "local",
+                "Origin": "CreateRouteTable",
+                "State": "active"
+            }
+        ],
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "myPublic2"
+            }
+        ],
+        "VpcId": "vpc-0bb411320455f33db",
+        "OwnerId": "471112641934"
+    },
+    "ClientToken": "c0c795c9-dbb5-489e-b27f-22f7521cf8fb"
+}
+
+
+Step8: Create public routing table
+root@dedic-DyvoPes:~$ aws ec2 create-route-table --vpc-id vpc-0bb411320455f33db --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=myPublic2}]'
+{
+    "RouteTable": {
+        "Associations": [],
+        "PropagatingVgws": [],
+        "RouteTableId": "rtb-0ca474e00e0a13a58",
+        "Routes": [
+            {
+                "DestinationCidrBlock": "192.168.0.0/16",
+                "GatewayId": "local",
+                "Origin": "CreateRouteTable",
+                "State": "active"
+            }
+        ],
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "myPublic2"
+            }
+        ],
+        "VpcId": "vpc-0bb411320455f33db",
+        "OwnerId": "471112641934"
+    },
+    "ClientToken": "294ca92b-3ac0-45f8-bc2a-23ddd3bafa46"
+}
+
+Step9: create route to internet gateway: 
+
+
+
+
+
+Step9: root@dedic-DyvoPes:~$ aws ec2 create-route --route-table-id rtb-0ca474e00e0a13a58 --destination-cidr-block 0.0.0.0/0 --gateway-id igw-0ba9b4dc4f4c311a2
+{
+    "Return": true
+}
+
+
+root@dedic-DyvoPes:~$ aws ec2 associate-route-table --route-table-id rtb-0ca474e00e0a13a58 --subnet-id subnet-0433d8e23ed5f8efd
+{
+    "AssociationId": "rtbassoc-05b35a9610825ded7",
+    "AssociationState": {
+        "State": "associated"
+    }
+}
+
+
+
+
+Step10: create routing table for private subnet
+root@dedic-DyvoPes:~$ aws ec2 create-route-table --vpc-id vpc-0bb411320455f33db --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=myPrivate2}]'
+{
+    "RouteTable": {
+        "Associations": [],
+        "PropagatingVgws": [],
+        "RouteTableId": "rtb-0c2ce7c6128addbaa",
+        "Routes": [
+            {
+                "DestinationCidrBlock": "192.168.0.0/16",
+                "GatewayId": "local",
+                "Origin": "CreateRouteTable",
+                "State": "active"
+            }
+        ],
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "myPrivate2"
+            }
+        ],
+        "VpcId": "vpc-0bb411320455f33db",
+        "OwnerId": "471112641934"
+    },
+    "ClientToken": "fb28f91a-b677-4f57-a969-594d36b0c498"
+}
+
+
+
+root@dedic-DyvoPes:~$ aws ec2 associate-route-table --route-table-id rtb-0c2ce7c6128addbaa --subnet-id subnet-034e0b42c3edb1c7b
+{
+    "AssociationId": "rtbassoc-05ffebca25950d218",
+    "AssociationState": {
+        "State": "associated"
+    }
+}
+
+
+
+Step11: NAT gateway creation: 
+Elastic IP for NAT Gateway:
+root@dedic-DyvoPes:~$ EIP_ID=$(aws ec2 allocate-address --domain vpc --query 'AllocationId' --output text)
+
+creation itself: 
+root@dedic-DyvoPes:~$ aws ec2 create-nat-gateway --subnet-id subnet-0433d8e23ed5f8efd --allocation-id $EIP_ID --tag-specifications 'ResourceType=natgateway,Tags=[{Key=Name,Value=myNAT2}]'
+{
+    "ClientToken": "2ebb246a-334b-45a5-bcfc-a1e8a2ca69ff",
+    "NatGateway": {
+        "CreateTime": "2024-10-21T18:09:35.000Z",
+        "NatGatewayAddresses": [
+            {
+                "AllocationId": "eipalloc-0c2d62fde95e67be5",
+                "IsPrimary": true,
+                "Status": "associating"
+            }
+        ],
+        "NatGatewayId": "nat-050814658f3eed5bf",
+        "State": "pending",
+        "SubnetId": "subnet-0433d8e23ed5f8efd",
+        "VpcId": "vpc-0bb411320455f33db",
+        "Tags": [
+            {
+                "Key": "Name",
+                "Value": "myNAT2"
+            }
+        ],
+        "ConnectivityType": "public"
+    }
+}
+myNAT2 nat-050814658f3eed5bf  Public  Pending –192.168.1.28  eni-02158e1337ef43f6e  vpc-0bb411320455f33db / demoVPC_CLI2 subnet-0433d8e23ed5f8efd / Public2 Monday, October 21, 2024 at 21:09:35 GMT+3
+
+Step13: SSH Security group:
+root@dedic-DyvoPes:~$ SG_ID=$(aws ec2 create-security-group --group-name MySSH2 --description "Security group for SSH access" --vpc-id vpc-0bb411320455f33db --tag-specifications 'ResourceType=security-group,Tags=[{Key=Name,Value=MySSH2}]' --output text)
+	MySSH2 sg-07d6be350a9e7391e  MySSH2  vpc-0bb411320455f33db Security group for SSH access 471112641934
+
+root@dedic-DyvoPes:~$ aws ec2 authorize-security-group-ingress --group-id sg-07d6be350a9e7391e --protocol tcp --port 22 --cidr 0.0.0.0/0
+{
+    "Return": true,
+    "SecurityGroupRules": [
+        {
+            "SecurityGroupRuleId": "sgr-0ced66b6605afb429",
+            "GroupId": "sg-07d6be350a9e7391e",
+            "GroupOwnerId": "471112641934",
+            "IsEgress": false,
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIpv4": "0.0.0.0/0"
+        }
+    ]
+}
+
+
+
